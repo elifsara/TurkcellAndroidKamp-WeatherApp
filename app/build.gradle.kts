@@ -34,6 +34,10 @@ android {
     buildFeatures {
         compose = true
     }
+    // Unit testlerde Log.d gibi Android fonksiyonları çökme yerine boş değer döndürsün
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
