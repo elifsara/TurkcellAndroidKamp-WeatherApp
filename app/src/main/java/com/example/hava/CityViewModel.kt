@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -38,6 +40,13 @@ class CityViewModel : ViewModel() {
 
     // Hava durumu şu an istenmekte olan şehirler (aynı şehir için iki istek gitmesin)
     private val loadingWeather = mutableSetOf<Long>()
+
+    // Ekrana en az bir kez gelmiş şehirler (yenilerken sadece bunları tekrar isteriz)
+    private val shownCityIds = mutableSetOf<Long>()
+
+    // Aşağı çekip yenileme sürüyor mu? (true iken listenin üstünde dönen çember görünür)
+    var isRefreshing by mutableStateOf(false)
+        private set
 
     init {
         search()   // ViewModel ilk oluşturulduğunda bir kere ara
@@ -84,19 +93,42 @@ class CityViewModel : ViewModel() {
 
     // Kart ekrana gelince çağrılır: o şehrin hava durumunu (daha önce gelmediyse) iste
     fun loadWeather(city: City) {
+        shownCityIds += city.id
         if (city.id in weatherById || city.id in loadingWeather) return
         loadingWeather += city.id
         Log.d("HavaApp", "Hava durumu isteniyor: ${city.name}")
         viewModelScope.launch {
             try {
-                repository.getWeather(city)?.let { weatherById[city.id] = it }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Gelmezse kart "--°" kalır; kart tekrar ekrana gelince yeniden denenir
+                fetchWeather(city)
             } finally {
                 loadingWeather -= city.id
             }
+        }
+    }
+
+    // Liste aşağı çekilince: ekrana gelmiş şehirlerin sıcaklıklarını yeniden iste
+    // ("--°" kalanlar dahil; eski sıcaklıklar yenisi gelene kadar görünmeye devam eder)
+    fun refresh() {
+        val cities = (uiState as? CityUiState.Success)?.cities.orEmpty()
+            .filter { it.id in shownCityIds }
+        if (isRefreshing) return
+
+        isRefreshing = true
+        Log.d("HavaApp", "Yenileniyor: ${cities.size} şehir")
+        viewModelScope.launch {
+            cities.map { city -> async { fetchWeather(city) } }.awaitAll()   // hepsi aynı anda
+            isRefreshing = false
+        }
+    }
+
+    // Tek bir şehrin hava durumunu iste ve sakla
+    private suspend fun fetchWeather(city: City) {
+        try {
+            repository.getWeather(city)?.let { weatherById[city.id] = it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Gelmezse kart "--°" kalır (ya da eski sıcaklığı gösterir); aşağı çekip yenileyince tekrar denenir
         }
     }
 
