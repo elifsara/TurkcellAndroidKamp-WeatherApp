@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,7 @@ import com.example.hava.ui.theme.HavaTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        LifecycleLog.add("MainActivity onCreate")
         // Üstteki saat/pil simgeleri mavi başlık üzerinde okunsun diye beyaz olsun
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         setContent {
@@ -49,6 +51,23 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        LifecycleLog.add("MainActivity onStart")
+    }
+
+    // Detay ekranı açılınca MainActivity ölmez, sadece arka plana geçer (onStop)
+    override fun onStop() {
+        super.onStop()
+        LifecycleLog.add("MainActivity onStop")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val reason = if (isChangingConfigurations) "döndürme, yeniden doğacak" else "kapandı"
+        LifecycleLog.add("MainActivity onDestroy ($reason)")
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)   // PullToRefreshBox henüz "deneysel" işaretli
@@ -59,6 +78,7 @@ fun CityScreen(
 ) {
     // Aramadan sonra klavyeyi kapatmak için
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
 
     Column(modifier = modifier.fillMaxSize()) {
         // Üst kısım: renkli başlık alanı + arama kutusu (SearchHeader.kt)
@@ -103,7 +123,10 @@ fun CityScreen(
                         CityList(
                             cities = state.cities.map { viewModel.withWeather(it) },   // yüklenen sıcaklıkları ekle
                             selectedCityId = viewModel.selectedCityId,
-                            onCityClick = { viewModel.onCityClick(it) },
+                            onCityClick = {
+                                viewModel.onCityClick(it)
+                                context.startActivity(DetailActivity.newIntent(context, it))   // detay ekranını aç
+                            },
                             onCityVisible = { viewModel.loadWeather(it) }
                         )
                     }

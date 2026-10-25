@@ -49,7 +49,13 @@ class CityViewModel : ViewModel() {
         private set
 
     init {
+        LifecycleLog.add("CityViewModel oluşturuldu")
         search()   // ViewModel ilk oluşturulduğunda bir kere ara
+    }
+
+    // Sadece MainActivity gerçekten kapanınca çağrılır (döndürmede çağrılmaz)
+    override fun onCleared() {
+        LifecycleLog.add("CityViewModel silindi (onCleared)")
     }
 
     fun onQueryChange(newQuery: String){

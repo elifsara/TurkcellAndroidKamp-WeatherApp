@@ -32,4 +32,8 @@ class CityRepository(
     // Tek bir şehrin anlık hava durumu (kart ekrana gelince çağrılır)
     suspend fun getWeather(city: City): CurrentWeather? =
         weatherApi.getCurrentWeather(city.latitude, city.longitude).current
+
+    // Detay ekranı için ayrıntılı tahmin
+    suspend fun getForecast(latitude: Double, longitude: Double): ForecastResponse =
+        weatherApi.getForecast(latitude, longitude)
 }

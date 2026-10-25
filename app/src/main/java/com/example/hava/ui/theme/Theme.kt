@@ -16,7 +16,9 @@ private val DarkColorScheme = darkColorScheme(
     secondary = Slate80,
     tertiary = Sun80,
     background = Background80,
-    surface = Background80
+    surface = Background80,
+    surfaceVariant = Card80,
+    surfaceContainerHighest = Card80   // Card varsayılan olarak bu rengi kullanır
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -25,7 +27,9 @@ private val LightColorScheme = lightColorScheme(
     secondary = Slate40,
     tertiary = Sun40,
     background = Background40,
-    surface = Background40
+    surface = Background40,
+    surfaceVariant = Card40,
+    surfaceContainerHighest = Card40
 )
 
 @Composable
