@@ -9,5 +9,6 @@ data class WeatherResponse(
 
 data class CurrentWeather(
     @SerializedName("temperature_2m") val temperature: Double,   // JSON'daki ad farklı → eşleştiriyoruz
-    @SerializedName("weather_code") val weatherCode: Int
+    @SerializedName("weather_code") val weatherCode: Int,
+    @SerializedName("is_day") val isDay: Int                     // 1 = gündüz, 0 = gece
 )

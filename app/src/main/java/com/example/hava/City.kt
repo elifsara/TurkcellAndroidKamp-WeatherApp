@@ -10,7 +10,8 @@ data class City(
     val country: String?, // bazı sonuçlarda gelmeyebilir → ? (nullolabilir)
     val admin1: String?,
     val temperature: Double? = null,   // hava durumu API'sinden sonradan dolduruluyor (Repository'de)
-    val weatherCode: Int? = null
+    val weatherCode: Int? = null,
+    val isDay: Boolean? = null         // gündüz mü gece mi (kart rengi ve 🌙 için)
 )
 
 // API'nin döndürdüğü cevabın tamamı

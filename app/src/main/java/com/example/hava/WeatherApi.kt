@@ -5,11 +5,11 @@ import retrofit2.http.Query
 
 interface WeatherApi {
 
-    // Tam adres: https://api.open-meteo.com/v1/forecast?latitude=..&longitude=..&current=temperature_2m,weather_code
+    // Tam adres: https://api.open-meteo.com/v1/forecast?latitude=..&longitude=..&current=temperature_2m,weather_code,is_day
     @GET("v1/forecast")
     suspend fun getCurrentWeather(
         @Query("latitude") latitude: Double,
         @Query("longitude") longitude: Double,
-        @Query("current") current: String = "temperature_2m,weather_code"
+        @Query("current") current: String = "temperature_2m,weather_code,is_day"
     ): WeatherResponse
 }

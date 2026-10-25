@@ -47,7 +47,8 @@ class CityRepository(
                 }
                 city.copy(
                     temperature = weather?.temperature,
-                    weatherCode = weather?.weatherCode
+                    weatherCode = weather?.weatherCode,
+                    isDay = weather?.isDay?.let { it == 1 }   // API 1/0 gönderiyor → true/false
                 )
             }
         }.awaitAll()        // hepsinin bitmesini bekle
