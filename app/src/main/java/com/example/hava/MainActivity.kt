@@ -1,33 +1,32 @@
 package com.example.hava
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hava.ui.theme.HavaTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.IconButton
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,54 +45,59 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun CityScreen(modifier: Modifier = Modifier) {
-    // Kutuya yazılan metin. Başta boş.
-    var query by rememberSaveable { mutableStateOf("") }
-    var selectedCityName by rememberSaveable { mutableStateOf<String?>(null) }
-    // Yazılan metni içeren şehilrler
-    val filteredCities = cities.filter { it.name.contains(query, ignoreCase = true) }
+fun CityScreen(
+    modifier: Modifier = Modifier,
+    viewModel: CityViewModel = viewModel()     // ViewModel'i Compose'dan al
+) {
     Column(modifier = modifier) {
-        OutlinedTextField(
-            value = query,    //kutuda görünen metin
-            onValueChange = { query = it },   //kullanıcı yazdıkça state'i güncelle.
-            label = { Text("Şehir ara") },
-            singleLine = true,
-            trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { query = "" }) {
-                        Text("✕")
+        // Üst kısım: arama kutusu + Ara düğmesi yan yana
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = viewModel.query,    //kutuda görünen metin
+                onValueChange = { viewModel.onQueryChange(it) },   //kullanıcı yazdıkça state'i güncelle.
+                label = { Text("Şehir ara") },
+                singleLine = true,
+                trailingIcon = {
+                    if (viewModel.query.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onQueryChange("") }) {
+                            Text("✕")
+                        }
                     }
-                }
-            },
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp)
-        )
-        Text(
-            text = "${filteredCities.size} şehir",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 20.dp, top = 8.dp)
-        )
+                },
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { viewModel.search() }) {
+                Text("Ara")
+            }
+        }
 
-        if (filteredCities.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+        // Alt kısım: duruma göre farklı ekran
+        when (val state = viewModel.uiState) {
+            CityUiState.Loading -> LoadingView()
+            CityUiState.Empty -> MessageView("Şehir bulunamadı")
+            is CityUiState.Error -> ErrorView(
+                message = state.message,
+                onRetry = { viewModel.search() }
+            )
+            is CityUiState.Success -> {
                 Text(
-                    text = "Şehir bulunamadı",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "${state.cities.size} şehir",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 20.dp, top = 8.dp)
+                )
+                CityList(
+                    cities = state.cities,
+                    selectedCityId = viewModel.selectedCityId,
+                    onCityClick = { viewModel.onCityClick(it) }
                 )
             }
-        } else {
-            CityList(
-                cities = filteredCities,
-                selectedCityName = selectedCityName,
-                onCityClick = { city ->
-                        selectedCityName = city.name
-                        Log.d("HavaApp", "Tıklandı: ${city.name}")
-                }
-            )
         }
     }
 }
@@ -102,7 +106,7 @@ fun CityScreen(modifier: Modifier = Modifier) {
 @Composable
 fun CityList(
     cities: List<City>,
-    selectedCityName: String?,
+    selectedCityId: Long?,
     onCityClick: (City) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -114,7 +118,7 @@ fun CityList(
         items(cities) { city ->
             CityCard(
                 city = city,
-                isSelected = city.name == selectedCityName,
+                isSelected = city.id == selectedCityId,
                 onClick ={ onCityClick(city)}
             )
         }
