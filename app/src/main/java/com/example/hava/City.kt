@@ -11,6 +11,7 @@ val cities = listOf(
     City("Antalya", 7),
     City("Bursa", 16),
     City("Eskişehir", 26),
+    City(name = "Malatya", 44),
     City("Elazığ", 23),
     City("Gaziantep", 27),
     City("İstanbul", 34),

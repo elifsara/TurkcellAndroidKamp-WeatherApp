@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.hava.ui.theme.HavaTheme
+import android.util.Log
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +48,10 @@ fun CityList(
         verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
         items(cities) { city ->
-            CityCard(city = city)
+            CityCard(
+                city = city,
+                onClick = {Log.d("HavaApp", "Tıklandı: ${city.name}")}
+            )
         }
     }
 }

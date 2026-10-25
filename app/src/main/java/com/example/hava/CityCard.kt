@@ -19,9 +19,11 @@ import com.example.hava.ui.theme.HavaTheme
 @Composable
 fun CityCard(
     city: City,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
+        onClick=onClick,
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
