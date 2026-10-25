@@ -7,11 +7,13 @@ import kotlinx.coroutines.flow.map
 // ViewModel ne internetten ne veritabanından haberdar; sadece Repository'den ister.
 //   - Şehir arama, hava durumu → internet (Retrofit)
 //   - Favoriler              → telefondaki veritabanı (Room)
+//   - Konumum                → telefonun GPS'i
 //   - 81 il, popüler şehirler → koda gömülü liste
 class CityRepository(
     private val cityApi: CityApi = ApiClient.cityApi,
     private val weatherApi: WeatherApi = ApiClient.weatherApi,
-    private val favoriteDao: FavoriteDao = HavaApp.database.favoriteDao()
+    private val favoriteDao: FavoriteDao = HavaApp.database.favoriteDao(),
+    private val locationProvider: LocationProvider = HavaApp.locationProvider
 ) {
     // Kutu boşken gösterilecek şehirler (telefonda hazır, internet gerekmez)
     fun getDefaultCities(): List<City> = defaultCities
@@ -51,4 +53,7 @@ class CityRepository(
     suspend fun addFavorite(city: City) = favoriteDao.insert(city.toFavorite())
 
     suspend fun removeFavorite(id: Long) = favoriteDao.delete(id)
+
+    // Bulunduğumuz yer (izin verildiyse)
+    suspend fun findMyCity(): City? = locationProvider.findMyCity()
 }

@@ -1,10 +1,18 @@
 package com.example.hava
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -31,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hava.ui.theme.HavaTheme
 
@@ -80,6 +89,27 @@ fun CityScreen(
     // Aramadan sonra klavyeyi kapatmak için
     val keyboardController = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
+
+    // Konum izni penceresi. Sonuç gelince: izin verildiyse konumu bul, verilmediyse kartta söyle.
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        if (results.values.any { it }) viewModel.loadMyLocation(force = true) else viewModel.onLocationDenied()
+    }
+    val requestLocation = {
+        if (hasLocationPermission(context)) {
+            viewModel.loadMyLocation(force = true)      // izin zaten var (ör. ayarlardan açıldı)
+        } else {
+            permissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
+            )
+        }
+    }
+
+    // Daha önce izin verildiyse uygulama açılır açılmaz konumu bul (tekrar sormadan)
+    LaunchedEffect(Unit) {
+        if (hasLocationPermission(context)) viewModel.loadMyLocation()
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         // Üst kısım: renkli başlık alanı + arama kutusu (SearchHeader.kt)
@@ -136,7 +166,12 @@ fun CityScreen(
                                 viewModel.onCityClick(it)
                                 context.startActivity(DetailActivity.newIntent(context, it))   // detay ekranını aç
                             },
-                            onCityVisible = { viewModel.loadWeather(it) }
+                            onCityVisible = { viewModel.loadWeather(it) },
+                            // Kutu boşken en üstte "Konumum" kartı
+                            locationState = if (viewModel.query.isBlank()) viewModel.locationState else null,
+                            onRequestLocation = requestLocation,
+                            onOpenSettings = { context.startActivity(appSettingsIntent(context)) },
+                            withWeather = { viewModel.withWeather(it) }
                         )
                     }
                 }
@@ -161,6 +196,10 @@ fun CityList(
     onFavoriteClick: (City) -> Unit,
     onCityClick: (City) -> Unit,
     onCityVisible: (City) -> Unit,
+    locationState: LocationState?,          // null → konum kartı gösterilmez (arama yaparken)
+    onRequestLocation: () -> Unit,
+    onOpenSettings: () -> Unit,
+    withWeather: (City) -> City,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
@@ -178,6 +217,28 @@ fun CityList(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        if (locationState != null) {
+            item(key = "konum") {
+                if (locationState is LocationState.Found) {
+                    val city = locationState.city
+                    LaunchedEffect(city.latitude, city.longitude) { onCityVisible(city) }
+                    CityCard(
+                        city = withWeather(city),
+                        isSelected = city.id == selectedCityId,
+                        onClick = { onCityClick(city) },   // kalp yok: konum favorilere eklenmez
+                        modifier = Modifier.animateItem()
+                    )
+                } else {
+                    LocationPromptCard(
+                        state = locationState,
+                        onRequestPermission = onRequestLocation,
+                        onOpenSettings = onOpenSettings,
+                        modifier = Modifier.animateItem()
+                    )
+                }
+            }
+        }
+
         sections.forEach { section ->
             // Bölüm başlığı
             item(key = section.key) {
@@ -209,3 +270,12 @@ fun CityList(
         }
     }
 }
+
+private fun hasLocationPermission(context: Context): Boolean =
+    listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION).any {
+        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+// Uygulamanın Android ayarlarındaki sayfası (izinler buradan açılabiliyor)
+private fun appSettingsIntent(context: Context) =
+    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))

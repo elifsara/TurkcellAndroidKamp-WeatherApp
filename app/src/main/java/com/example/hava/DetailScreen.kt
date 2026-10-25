@@ -143,12 +143,14 @@ private fun DetailHeader(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = Color.White)
             }
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onFavoriteClick) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = if (isFavorite) "Favorilerden çıkar" else "Favorilere ekle",
-                    tint = Color.White
-                )
+            if (city.id != MY_LOCATION_ID) {   // "Konumum" favorilere eklenmez
+                IconButton(onClick = onFavoriteClick) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (isFavorite) "Favorilerden çıkar" else "Favorilere ekle",
+                        tint = Color.White
+                    )
+                }
             }
         }
         Text(

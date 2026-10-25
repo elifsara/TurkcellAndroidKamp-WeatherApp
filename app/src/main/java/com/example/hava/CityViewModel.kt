@@ -52,6 +52,10 @@ class CityViewModel(
     var favorites by mutableStateOf<List<City>>(emptyList())
         private set
 
+    // "Konumum" kartının durumu
+    var locationState by mutableStateOf<LocationState>(LocationState.NotAsked)
+        private set
+
     init {
         LifecycleLog.add("CityViewModel oluşturuldu")
         search()   // ViewModel ilk oluşturulduğunda bir kere ara
@@ -119,6 +123,28 @@ class CityViewModel(
                 loadingWeather -= city.id
             }
         }
+    }
+
+    // İzin verildikten sonra çağrılır. Konum zaten bulunduysa (ör. ekran döndü) tekrar aramaz.
+    fun loadMyLocation(force: Boolean = false) {
+        if (!force && (locationState is LocationState.Found || locationState == LocationState.Loading)) return
+        locationState = LocationState.Loading
+        viewModelScope.launch {
+            locationState = try {
+                repository.findMyCity()?.let { city ->
+                    weatherById.remove(MY_LOCATION_ID)   // yer değişmiş olabilir → eski sıcaklığı unut
+                    LocationState.Found(city)
+                } ?: LocationState.Unavailable
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                LocationState.Unavailable
+            }
+        }
+    }
+
+    fun onLocationDenied() {
+        locationState = LocationState.Denied
     }
 
     fun isFavorite(city: City): Boolean = favorites.any { it.id == city.id }
