@@ -16,15 +16,22 @@ class CityRepository(
 
     // Arama: önce şehirleri bul, sonra sıcaklıkları ekle
     suspend fun searchCities(query: String): List<City> {
-        val fromApi = cityApi.searchCities(query).results.orEmpty()   // null ise boş liste
+        // 1) Önce 81 il içinde ara (telefonda, internet gerekmez). "es" → Eskişehir
+        val fromProvinces = turkishProvinces.filter { it.name.startsWith(query, ignoreCase = true) }
 
-        // API 1-2 harfte kısmi arama yapmıyor ("iz" → boş). Bu yüzden popüler şehirlerden
-        // adı bu harflerle başlayanları da başa ekliyoruz (API'de zaten varsa tekrar eklemiyoruz).
-        val fromDefaults = defaultCities
-            .filter { it.name.startsWith(query, ignoreCase = true) }
-            .filter { local -> fromApi.none { it.name.equals(local.name, ignoreCase = true) } }
+        // 2) API 1-2 harfte sonuç döndürmüyor; 3+ harfte dünyadaki diğer yerleri de ara
+        val fromApi = if (query.length >= 3) {
+            cityApi.searchCities(query).results.orEmpty()   // null ise boş liste
+        } else {
+            emptyList()
+        }
 
-        return withWeather(fromDefaults + fromApi)
+        // API'den gelen ve zaten il listesinde olan şehri tekrar gösterme
+        val others = fromApi.filterNot { api ->
+            fromProvinces.any { it.name.equals(api.name, ignoreCase = true) }
+        }
+
+        return withWeather(fromProvinces + others)
     }
 
     // Her şehrin hava durumunu AYNI ANDA iste ve şehre ekle
