@@ -4,6 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -109,27 +114,34 @@ fun CityScreen(
                 .padding(horizontal = 16.dp)
         )
 
-        // Alt kısım: duruma göre farklı ekran
-        when (val state = viewModel.uiState) {
-            CityUiState.Loading -> LoadingView()
-            CityUiState.Empty -> MessageView("Şehir bulunamadı")
-            is CityUiState.Error -> ErrorView(
-                message = state.message,
-                onRetry = { viewModel.search() }
-            )
-            is CityUiState.Success -> {
-                Text(
-                    text = if (viewModel.query.isBlank()) "Popüler şehirler" else "${state.cities.size} şehir",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 20.dp, top = 16.dp)
+        // Alt kısım: duruma göre farklı ekran. Durum değişince eski ekran yavaşça kaybolur, yenisi belirir.
+        AnimatedContent(
+            targetState = viewModel.uiState,
+            contentKey = { it::class },   // liste → yeni liste geçişinde tüm ekranı değil, sadece kartları anime et
+            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+            label = "durum"
+        ) { state ->
+            when (state) {
+                CityUiState.Loading -> LoadingView()
+                CityUiState.Empty -> MessageView("Şehir bulunamadı")
+                is CityUiState.Error -> ErrorView(
+                    message = state.message,
+                    onRetry = { viewModel.search() }
                 )
-                CityList(
-                    cities = state.cities,
-                    selectedCityId = viewModel.selectedCityId,
-                    onCityClick = { viewModel.onCityClick(it) }
-                )
+                is CityUiState.Success -> Column {
+                    Text(
+                        text = if (viewModel.query.isBlank()) "Popüler şehirler" else "${state.cities.size} şehir",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 20.dp, top = 16.dp)
+                    )
+                    CityList(
+                        cities = state.cities,
+                        selectedCityId = viewModel.selectedCityId,
+                        onCityClick = { viewModel.onCityClick(it) }
+                    )
+                }
             }
         }
     }
@@ -148,11 +160,12 @@ fun CityList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(cities) { city ->
+        items(cities, key = { it.id }) { city ->   // key: hangi kartın hangi şehir olduğunu takip et
             CityCard(
                 city = city,
                 isSelected = city.id == selectedCityId,
-                onClick ={ onCityClick(city)}
+                onClick ={ onCityClick(city)},
+                modifier = Modifier.animateItem()     // liste değişince kartlar kayarak yer değiştirsin
             )
         }
     }
