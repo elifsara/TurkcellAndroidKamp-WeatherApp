@@ -45,6 +45,8 @@ class MainActivity : ComponentActivity() {
 fun CityScreen(modifier: Modifier = Modifier) {
     // Kutuya yazılan metin. Başta boş.
     var query by remember { mutableStateOf("") }
+    // Yazılan metni içeren şehilrler
+    val filteredCities = cities.filter { it.name.contains(query, ignoreCase = true) }
     Column(modifier = modifier) {
         OutlinedTextField(
             value = query,    //kutuda görünen metin
@@ -53,7 +55,7 @@ fun CityScreen(modifier: Modifier = Modifier) {
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp)
         )
-        CityList(cities = cities)
+        CityList(cities = filteredCities)
     }
 }
 
