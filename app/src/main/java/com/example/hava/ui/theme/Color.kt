@@ -2,10 +2,16 @@ package com.example.hava.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Açık tema: gök mavisi tonları + güneş turuncusu
+val SkyBlue40 = Color(0xFF1E6FD9)
+val SkyBlueContainer40 = Color(0xFFD6E6FF)
+val Slate40 = Color(0xFF4B5A73)
+val Sun40 = Color(0xFFB45A00)
+val Background40 = Color(0xFFF4F8FD)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Koyu tema: aynı renklerin açık tonları + gece laciverti
+val SkyBlue80 = Color(0xFF9CC7FF)
+val SkyBlueContainer80 = Color(0xFF0F4C9A)
+val Slate80 = Color(0xFFBAC6DB)
+val Sun80 = Color(0xFFFFB870)
+val Background80 = Color(0xFF0E141B)
