@@ -59,11 +59,18 @@ fun CityCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant   //Soluk renk
                 )
             }
-            // Sağ taraf Sıcaklık (Yer tutucu-şimdilik)
-            Text(
-                text = "--°",
-                style = MaterialTheme.typography.displaySmall
-            )
+            // Sağ taraf: hava durumu simgesi + sıcaklık + açıklama
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${weatherEmoji(city.weatherCode)} ${formatTemperature(city.temperature)}",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Text(
+                    text = weatherDescription(city.weatherCode),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
         }
     }
@@ -78,7 +85,9 @@ fun CityCardPreview() {
             latitude = 39.92,
             longitude = 32.85,
             country = "Türkiye",
-            admin1 = "Ankara"
+            admin1 = "Ankara",
+            temperature = 20.3,
+            weatherCode = 0
         ))
     }
 }
@@ -92,7 +101,9 @@ fun CityCardSelectedPreview() {
             latitude = 39.92,
             longitude = 32.85,
             country = "Türkiye",
-            admin1 = "Ankara"
+            admin1 = "Ankara",
+            temperature = 20.3,
+            weatherCode = 0
         ), isSelected = true)
     }
 }

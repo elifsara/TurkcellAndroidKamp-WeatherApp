@@ -8,7 +8,9 @@ data class City(
     val latitude: Double,
     val longitude: Double,
     val country: String?, // bazı sonuçlarda gelmeyebilir → ? (nullolabilir)
-    val admin1: String?
+    val admin1: String?,
+    val temperature: Double? = null,   // hava durumu API'sinden sonradan dolduruluyor (Repository'de)
+    val weatherCode: Int? = null
 )
 
 // API'nin döndürdüğü cevabın tamamı
