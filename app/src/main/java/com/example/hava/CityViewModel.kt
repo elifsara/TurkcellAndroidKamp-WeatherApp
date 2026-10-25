@@ -14,6 +14,9 @@ import java.io.IOException
 
 class CityViewModel : ViewModel() {
 
+    // Şehirleri Repository'den alıyoruz (Ekran → ViewModel → Repository → API)
+    private val repository = CityRepository()
+
     // Arama kutusundaki metin. Uygulama açılınca örnek olarak "Ankara" aransın.
     var query by mutableStateOf("Ankara")
         private set                       // dışarıdan sadece okunabilir, değiştirmek için fonksiyon
@@ -56,8 +59,7 @@ class CityViewModel : ViewModel() {
 
             uiState = CityUiState.Loading
             uiState = try {
-                val response = ApiClient.cityApi.searchCities(text)
-                val cities = response.results.orEmpty()  // null ise boş liste
+                val cities = repository.searchCities(text)
                 if (cities.isEmpty()){
                     CityUiState.Empty
                 } else {
