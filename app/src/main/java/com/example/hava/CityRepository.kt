@@ -11,11 +11,24 @@ class CityRepository(
     private val cityApi: CityApi = ApiClient.cityApi,
     private val weatherApi: WeatherApi = ApiClient.weatherApi
 ) {
-    suspend fun searchCities(query: String): List<City> = coroutineScope {
-        // 1) Önce şehirleri bul
-        val cities = cityApi.searchCities(query).results.orEmpty()   // null ise boş liste
+    // Kutu boşken: sabit listeye sıcaklıkları ekle
+    suspend fun getDefaultCities(): List<City> = withWeather(defaultCities)
 
-        // 2) Her şehrin hava durumunu AYNI ANDA iste
+    // Arama: önce şehirleri bul, sonra sıcaklıkları ekle
+    suspend fun searchCities(query: String): List<City> {
+        val fromApi = cityApi.searchCities(query).results.orEmpty()   // null ise boş liste
+
+        // API 1-2 harfte kısmi arama yapmıyor ("iz" → boş). Bu yüzden popüler şehirlerden
+        // adı bu harflerle başlayanları da başa ekliyoruz (API'de zaten varsa tekrar eklemiyoruz).
+        val fromDefaults = defaultCities
+            .filter { it.name.startsWith(query, ignoreCase = true) }
+            .filter { local -> fromApi.none { it.name.equals(local.name, ignoreCase = true) } }
+
+        return withWeather(fromDefaults + fromApi)
+    }
+
+    // Her şehrin hava durumunu AYNI ANDA iste ve şehre ekle
+    private suspend fun withWeather(cities: List<City>): List<City> = coroutineScope {
         cities.map { city ->
             async {
                 val weather = try {

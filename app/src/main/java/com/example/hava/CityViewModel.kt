@@ -17,8 +17,8 @@ class CityViewModel : ViewModel() {
     // Şehirleri Repository'den alıyoruz (Ekran → ViewModel → Repository → API)
     private val repository = CityRepository()
 
-    // Arama kutusundaki metin. Uygulama açılınca örnek olarak "Ankara" aransın.
-    var query by mutableStateOf("Ankara")
+    // Arama kutusundaki metin. Boşken popüler şehirler gösterilir.
+    var query by mutableStateOf("")
         private set                       // dışarıdan sadece okunabilir, değiştirmek için fonksiyon
 
     // Ekranın şu anki durumu
@@ -52,14 +52,14 @@ class CityViewModel : ViewModel() {
             delay(debounceMillis)                    // kullanıcı yazmaya devam ederse burada iptal olur
 
             val text = query.trim()
-            if (text.length < 3) {                   // API 3 harften azında kısmi arama yapmıyor
-                uiState = CityUiState.Empty
-                return@launch
-            }
 
             uiState = CityUiState.Loading
             uiState = try {
-                val cities = repository.searchCities(text)
+                val cities = if (text.isEmpty()) {
+                    repository.getDefaultCities()    // kutu boş → popüler şehirler
+                } else {
+                    repository.searchCities(text)
+                }
                 if (cities.isEmpty()){
                     CityUiState.Empty
                 } else {

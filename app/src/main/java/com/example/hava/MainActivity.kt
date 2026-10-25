@@ -95,17 +95,14 @@ fun CityScreen(
         // Alt kısım: duruma göre farklı ekran
         when (val state = viewModel.uiState) {
             CityUiState.Loading -> LoadingView()
-            CityUiState.Empty -> MessageView(
-                if (viewModel.query.trim().length < 3) "Aramak için en az 3 harf yaz"
-                else "Şehir bulunamadı"
-            )
+            CityUiState.Empty -> MessageView("Şehir bulunamadı")
             is CityUiState.Error -> ErrorView(
                 message = state.message,
                 onRetry = { viewModel.search() }
             )
             is CityUiState.Success -> {
                 Text(
-                    text = "${state.cities.size} şehir",
+                    text = if (viewModel.query.isBlank()) "Popüler şehirler" else "${state.cities.size} şehir",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 20.dp, top = 8.dp)
