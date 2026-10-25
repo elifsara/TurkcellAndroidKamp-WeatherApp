@@ -2,6 +2,7 @@ package com.example.hava
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
@@ -13,66 +14,35 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hava.ui.theme.HavaTheme
 
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Üstteki saat/pil simgeleri mavi başlık üzerinde okunsun diye beyaz olsun
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         setContent {
             HavaTheme {
-                // Liste aşağı kaydırılınca büyük başlık küçülsün
-                val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-
-                Scaffold(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .nestedScroll(scrollBehavior.nestedScrollConnection),
-                    topBar = {
-                        LargeTopAppBar(
-                            title = {
-                                Text(
-                                    text = stringResource(R.string.app_name),   // "Hava Durumu"
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
-                            scrollBehavior = scrollBehavior
-                        )
-                    }
-                ) { innerPadding ->
-                    CityScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                // Scaffold + TopAppBar yerine kendi başlık alanımızı (SearchHeader) kullanıyoruz
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    CityScreen()
                 }
             }
         }
@@ -87,32 +57,15 @@ fun CityScreen(
     // Aramadan sonra klavyeyi kapatmak için
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    Column(modifier = modifier) {
-        // Üst kısım: yuvarlak arama çubuğu (yazdıkça aradığı için ayrı bir Ara düğmesine gerek yok)
-        OutlinedTextField(
-            value = viewModel.query,    //kutuda görünen metin
-            onValueChange = { viewModel.onQueryChange(it) },   //kullanıcı yazdıkça state'i güncelle.
-            placeholder = { Text("Şehir ara") },
-            singleLine = true,
-            shape = RoundedCornerShape(28.dp),
-            leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = null)
-            },
-            trailingIcon = {
-                if (viewModel.query.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.onQueryChange("") }) {
-                        Icon(Icons.Default.Close, contentDescription = "Temizle")
-                    }
-                }
-            },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),   // Enter tuşu 🔍 olur
-            keyboardActions = KeyboardActions(onSearch = {
+    Column(modifier = modifier.fillMaxSize()) {
+        // Üst kısım: renkli başlık alanı + arama kutusu (SearchHeader.kt)
+        SearchHeader(
+            query = viewModel.query,
+            onQueryChange = { viewModel.onQueryChange(it) },
+            onSearch = {
                 viewModel.search()
                 keyboardController?.hide()
-            }),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+            }
         )
 
         // Alt kısım: duruma göre farklı ekran. Durum değişince eski ekran yavaşça kaybolur, yenisi belirir.
@@ -120,7 +73,8 @@ fun CityScreen(
             targetState = viewModel.uiState,
             contentKey = { it::class },   // liste → yeni liste geçişinde tüm ekranı değil, sadece kartları anime et
             transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
-            label = "durum"
+            label = "durum",
+            modifier = Modifier.navigationBarsPadding()   // alttaki gezinme çubuğunun altında kalmasın
         ) { state ->
             when (state) {
                 CityUiState.Loading -> LoadingView()
