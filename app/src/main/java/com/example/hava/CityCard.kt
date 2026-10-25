@@ -40,7 +40,7 @@ fun CityCard(
 
             // Sol taraf: Şehir adı + Plaka
             Column(modifier = Modifier.weight(1f)) {
-                // wight(1f) sağa kadar olan boş alanı kapla.
+                // weight(1f) sağa kadar olan boş alanı kapla.
                 Text(
                     text = city.name,
                     style = MaterialTheme.typography.headlineSmall
