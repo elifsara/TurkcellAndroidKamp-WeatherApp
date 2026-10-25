@@ -1,24 +1,17 @@
 package com.example.hava
 
+// API'den gelen tek bir şehir.
+// Alan adları JSON'daki anahtarlarla birebir aynı olmalı ki Gson eşleştirebilsin.
 data class City(
+    val id: Long,
     val name: String,
-    val plate: Int
+    val latitude: Double,
+    val longitude: Double,
+    val country: String?, // bazı sonuçlarda gelmeyebilir → ? (nullolabilir)
+    val admin1: String?
 )
 
-val cities = listOf(
-    City("Adana", 1),
-    City("Ankara", 6),
-    City("Antalya", 7),
-    City("Bursa", 16),
-    City("Eskişehir", 26),
-    City(name = "Malatya", 44),
-    City("Elazığ", 23),
-    City("Gaziantep", 27),
-    City("İstanbul", 34),
-    City("İzmir", 35),
-    City("Kayseri", 38),
-    City("Konya", 42),
-    City("Samsun", 55),
-    City("Trabzon", 61)
+// API'nin döndürdüğü cevabın tamamı
+data class CitySearchResponse(
+    val results: List<City>?   // sonuç yoksa API bu alanı hiç göndermiyor → null
 )
-

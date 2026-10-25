@@ -54,7 +54,7 @@ fun CityCard(
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                    text = "Plaka: ${city.plate.toString().padStart(2, '0')}",
+                    text = listOfNotNull(city.admin1, city.country).joinToString(", "),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant   //Soluk renk
                 )
@@ -72,13 +72,27 @@ fun CityCard(
 @Composable
 fun CityCardPreview() {
     HavaTheme {
-        CityCard(city = City("Ankara", 6))
+        CityCard(city = City(
+            id = 1,
+            name = "Ankara",
+            latitude = 39.92,
+            longitude = 32.85,
+            country = "Türkiye",
+            admin1 = "Ankara"
+        ))
     }
 }
 @Preview(showBackground = true)
 @Composable
 fun CityCardSelectedPreview() {
     HavaTheme {
-        CityCard(city = City("Ankara", 6), isSelected = true)
+        CityCard(city = City(
+            id = 1,
+            name = "Ankara",
+            latitude = 39.92,
+            longitude = 32.85,
+            country = "Türkiye",
+            admin1 = "Ankara"
+        ), isSelected = true)
     }
 }
