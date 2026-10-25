@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -23,12 +26,16 @@ class CityViewModel : ViewModel() {
     var selectedCityId by mutableStateOf<Long?>(null)
         private set
 
+    // Devam eden arama işi (yenisi başlayınca eskisini iptal edebilmek için)
+    private var searchJob: Job? = null
+
     init {
         search()   // ViewModel ilk oluşturulduğunda bir kere ara
     }
 
     fun onQueryChange(newQuery: String){
         query = newQuery
+        search(debounceMillis = 400)   // yazmayı bırakınca 400 ms sonra ara
     }
 
     fun onCityClick(city: City) {
@@ -36,17 +43,28 @@ class CityViewModel : ViewModel() {
         Log.d("HavaApp", "Tıklandı: ${city.name}")
     }
 
-    fun search() {
-        viewModelScope.launch {     // arka planda bir iş başlat
+    fun search(debounceMillis: Long = 0) {
+        searchJob?.cancel()                          // önceki aramayı iptal et
+        searchJob = viewModelScope.launch {     // arka planda bir iş başlat
+            delay(debounceMillis)                    // kullanıcı yazmaya devam ederse burada iptal olur
+
+            val text = query.trim()
+            if (text.length < 3) {                   // API 3 harften azında kısmi arama yapmıyor
+                uiState = CityUiState.Empty
+                return@launch
+            }
+
             uiState = CityUiState.Loading
             uiState = try {
-                val response = ApiClient.cityApi.searchCities(query.trim())
+                val response = ApiClient.cityApi.searchCities(text)
                 val cities = response.results.orEmpty()  // null ise boş liste
                 if (cities.isEmpty()){
                     CityUiState.Empty
                 } else {
                     CityUiState.Success(cities)
                 }
+            } catch (e: CancellationException) {
+                throw e                              // iptal bir hata değil, aynen geri fırlat
             } catch (e: IOException) {                   // internet yok, zaman aşımı..
                 CityUiState.Error("İnternet bağlantını kontrol et.")
             } catch (e: Exception) {                  // diğer her şey

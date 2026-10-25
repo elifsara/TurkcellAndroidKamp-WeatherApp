@@ -80,7 +80,10 @@ fun CityScreen(
         // Alt kısım: duruma göre farklı ekran
         when (val state = viewModel.uiState) {
             CityUiState.Loading -> LoadingView()
-            CityUiState.Empty -> MessageView("Şehir bulunamadı")
+            CityUiState.Empty -> MessageView(
+                if (viewModel.query.trim().length < 3) "Aramak için en az 3 harf yaz"
+                else "Şehir bulunamadı"
+            )
             is CityUiState.Error -> ErrorView(
                 message = state.message,
                 onRetry = { viewModel.search() }
