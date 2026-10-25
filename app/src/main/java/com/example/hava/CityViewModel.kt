@@ -2,6 +2,7 @@ package com.example.hava
 
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -32,6 +33,12 @@ class CityViewModel : ViewModel() {
     // Devam eden arama işi (yenisi başlayınca eskisini iptal edebilmek için)
     private var searchJob: Job? = null
 
+    // Şehir id'si → hava durumu. Bir kere gelen tekrar istenmez (aramalar arasında da saklanır).
+    private val weatherById = mutableStateMapOf<Long, CurrentWeather>()
+
+    // Hava durumu şu an istenmekte olan şehirler (aynı şehir için iki istek gitmesin)
+    private val loadingWeather = mutableSetOf<Long>()
+
     init {
         search()   // ViewModel ilk oluşturulduğunda bir kere ara
     }
@@ -52,14 +59,14 @@ class CityViewModel : ViewModel() {
             delay(debounceMillis)                    // kullanıcı yazmaya devam ederse burada iptal olur
 
             val text = query.trim()
+            if (text.isEmpty()) {                    // kutu boş → popüler şehirler (telefonda hazır, beklemeye gerek yok)
+                uiState = CityUiState.Success(repository.getDefaultCities())
+                return@launch
+            }
 
             uiState = CityUiState.Loading
             uiState = try {
-                val cities = if (text.isEmpty()) {
-                    repository.getDefaultCities()    // kutu boş → popüler şehirler
-                } else {
-                    repository.searchCities(text)
-                }
+                val cities = repository.searchCities(text)
                 if (cities.isEmpty()){
                     CityUiState.Empty
                 } else {
@@ -73,5 +80,33 @@ class CityViewModel : ViewModel() {
                 CityUiState.Error("Bir hata oluştu: ${e.message}")
             }
         }
+    }
+
+    // Kart ekrana gelince çağrılır: o şehrin hava durumunu (daha önce gelmediyse) iste
+    fun loadWeather(city: City) {
+        if (city.id in weatherById || city.id in loadingWeather) return
+        loadingWeather += city.id
+        Log.d("HavaApp", "Hava durumu isteniyor: ${city.name}")
+        viewModelScope.launch {
+            try {
+                repository.getWeather(city)?.let { weatherById[city.id] = it }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Gelmezse kart "--°" kalır; kart tekrar ekrana gelince yeniden denenir
+            } finally {
+                loadingWeather -= city.id
+            }
+        }
+    }
+
+    // Şehre, yüklendiyse hava durumunu ekle (yüklenmediyse şehir olduğu gibi döner → kart "--°" gösterir)
+    fun withWeather(city: City): City {
+        val weather = weatherById[city.id] ?: return city
+        return city.copy(
+            temperature = weather.temperature,
+            weatherCode = weather.weatherCode,
+            isDay = weather.isDay == 1   // API 1/0 gönderiyor → true/false
+        )
     }
 }

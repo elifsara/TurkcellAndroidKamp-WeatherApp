@@ -33,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -137,9 +138,10 @@ fun CityScreen(
                         modifier = Modifier.padding(start = 20.dp, top = 16.dp)
                     )
                     CityList(
-                        cities = state.cities,
+                        cities = state.cities.map { viewModel.withWeather(it) },   // yüklenen sıcaklıkları ekle
                         selectedCityId = viewModel.selectedCityId,
-                        onCityClick = { viewModel.onCityClick(it) }
+                        onCityClick = { viewModel.onCityClick(it) },
+                        onCityVisible = { viewModel.loadWeather(it) }
                     )
                 }
             }
@@ -153,6 +155,7 @@ fun CityList(
     cities: List<City>,
     selectedCityId: Long?,
     onCityClick: (City) -> Unit,
+    onCityVisible: (City) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -161,6 +164,11 @@ fun CityList(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(cities, key = { it.id }) { city ->   // key: hangi kartın hangi şehir olduğunu takip et
+            // LazyColumn bu kartı ancak ekrana gelirken çizer → o an sıcaklığını iste.
+            // Ekrana hiç gelmeyen kartların hava durumu hiç istenmez.
+            LaunchedEffect(city.id) {
+                onCityVisible(city)
+            }
             CityCard(
                 city = city,
                 isSelected = city.id == selectedCityId,

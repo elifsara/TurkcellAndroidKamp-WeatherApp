@@ -1,20 +1,15 @@
 package com.example.hava
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-
 // Verinin nereden geleceğine karar veren katman.
 // ViewModel API'yi bilmez, sadece Repository'den şehir ister.
 class CityRepository(
     private val cityApi: CityApi = ApiClient.cityApi,
     private val weatherApi: WeatherApi = ApiClient.weatherApi
 ) {
-    // Kutu boşken: sabit listeye sıcaklıkları ekle
-    suspend fun getDefaultCities(): List<City> = withWeather(defaultCities)
+    // Kutu boşken gösterilecek şehirler (telefonda hazır, internet gerekmez)
+    fun getDefaultCities(): List<City> = defaultCities
 
-    // Arama: önce şehirleri bul, sonra sıcaklıkları ekle
+    // Arama: sadece şehirleri bulur. Sıcaklıklar kart ekrana gelince ayrı ayrı istenir (getWeather).
     suspend fun searchCities(query: String): List<City> {
         // 1) Önce 81 il içinde ara (telefonda, internet gerekmez). "es" → Eskişehir
         val fromProvinces = turkishProvinces.filter { it.name.startsWith(query, ignoreCase = true) }
@@ -31,26 +26,10 @@ class CityRepository(
             fromProvinces.any { it.name.equals(api.name, ignoreCase = true) }
         }
 
-        return withWeather(fromProvinces + others)
+        return fromProvinces + others
     }
 
-    // Her şehrin hava durumunu AYNI ANDA iste ve şehre ekle
-    private suspend fun withWeather(cities: List<City>): List<City> = coroutineScope {
-        cities.map { city ->
-            async {
-                val weather = try {
-                    weatherApi.getCurrentWeather(city.latitude, city.longitude).current
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    null    // bir şehrin hava durumu gelmezse şehir yine görünsün, sadece "--°" yazsın
-                }
-                city.copy(
-                    temperature = weather?.temperature,
-                    weatherCode = weather?.weatherCode,
-                    isDay = weather?.isDay?.let { it == 1 }   // API 1/0 gönderiyor → true/false
-                )
-            }
-        }.awaitAll()        // hepsinin bitmesini bekle
-    }
+    // Tek bir şehrin anlık hava durumu (kart ekrana gelince çağrılır)
+    suspend fun getWeather(city: City): CurrentWeather? =
+        weatherApi.getCurrentWeather(city.latitude, city.longitude).current
 }
