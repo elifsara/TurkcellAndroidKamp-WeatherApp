@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hava.ui.theme.HavaTheme
@@ -49,6 +53,9 @@ fun CityScreen(
     modifier: Modifier = Modifier,
     viewModel: CityViewModel = viewModel()     // ViewModel'i Compose'dan al
 ) {
+    // Aramadan sonra klavyeyi kapatmak için
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     Column(modifier = modifier) {
         // Üst kısım: arama kutusu + Ara düğmesi yan yana
         Row(
@@ -62,6 +69,11 @@ fun CityScreen(
                 onValueChange = { viewModel.onQueryChange(it) },   //kullanıcı yazdıkça state'i güncelle.
                 label = { Text("Şehir ara") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),   // Enter tuşu 🔍 olur
+                keyboardActions = KeyboardActions(onSearch = {
+                    viewModel.search()
+                    keyboardController?.hide()
+                }),
                 trailingIcon = {
                     if (viewModel.query.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onQueryChange("") }) {
@@ -72,7 +84,10 @@ fun CityScreen(
                 modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { viewModel.search() }) {
+            Button(onClick = {
+                viewModel.search()
+                keyboardController?.hide()
+            }) {
                 Text("Ara")
             }
         }
