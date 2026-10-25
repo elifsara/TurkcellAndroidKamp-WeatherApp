@@ -7,38 +7,63 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hava.ui.theme.HavaTheme
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             HavaTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                // Liste aşağı kaydırılınca büyük başlık küçülsün
+                val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+                Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    topBar = {
+                        LargeTopAppBar(
+                            title = {
+                                Text(
+                                    text = stringResource(R.string.app_name),   // "Hava Durumu"
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            scrollBehavior = scrollBehavior
+                        )
+                    }
+                ) { innerPadding ->
                     CityScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
@@ -57,40 +82,32 @@ fun CityScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(modifier = modifier) {
-        // Üst kısım: arama kutusu + Ara düğmesi yan yana
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = viewModel.query,    //kutuda görünen metin
-                onValueChange = { viewModel.onQueryChange(it) },   //kullanıcı yazdıkça state'i güncelle.
-                label = { Text("Şehir ara") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),   // Enter tuşu 🔍 olur
-                keyboardActions = KeyboardActions(onSearch = {
-                    viewModel.search()
-                    keyboardController?.hide()
-                }),
-                trailingIcon = {
-                    if (viewModel.query.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onQueryChange("") }) {
-                            Text("✕")
-                        }
+        // Üst kısım: yuvarlak arama çubuğu (yazdıkça aradığı için ayrı bir Ara düğmesine gerek yok)
+        OutlinedTextField(
+            value = viewModel.query,    //kutuda görünen metin
+            onValueChange = { viewModel.onQueryChange(it) },   //kullanıcı yazdıkça state'i güncelle.
+            placeholder = { Text("Şehir ara") },
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = null)
+            },
+            trailingIcon = {
+                if (viewModel.query.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.onQueryChange("") }) {
+                        Icon(Icons.Default.Close, contentDescription = "Temizle")
                     }
-                },
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
+                }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),   // Enter tuşu 🔍 olur
+            keyboardActions = KeyboardActions(onSearch = {
                 viewModel.search()
                 keyboardController?.hide()
-            }) {
-                Text("Ara")
-            }
-        }
+            }),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        )
 
         // Alt kısım: duruma göre farklı ekran
         when (val state = viewModel.uiState) {
@@ -103,9 +120,10 @@ fun CityScreen(
             is CityUiState.Success -> {
                 Text(
                     text = if (viewModel.query.isBlank()) "Popüler şehirler" else "${state.cities.size} şehir",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 20.dp, top = 8.dp)
+                    modifier = Modifier.padding(start = 20.dp, top = 16.dp)
                 )
                 CityList(
                     cities = state.cities,
