@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio ayarları (kişiye özel)
+/.idea/
