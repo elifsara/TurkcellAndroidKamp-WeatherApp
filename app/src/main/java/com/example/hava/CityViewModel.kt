@@ -163,6 +163,7 @@ class CityViewModel(
         if (isRefreshing) return
 
         isRefreshing = true
+        if (locationState is LocationState.Found) loadMyLocation(force = true)   // yer değişmiş olabilir
         Log.d("HavaApp", "Yenileniyor: ${cities.size} şehir")
         viewModelScope.launch {
             cities.map { city -> async { fetchWeather(city) } }.awaitAll()   // hepsi aynı anda
