@@ -27,6 +27,7 @@ import com.example.hava.ui.theme.HavaTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
+import androidx.compose.material3.IconButton
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +58,20 @@ fun CityScreen(modifier: Modifier = Modifier) {
             onValueChange = { query = it },   //kullanıcı yazdıkça state'i güncelle.
             label = { Text("Şehir ara") },
             singleLine = true,
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { query = "" }) {
+                        Text("✕")
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp)
+        )
+        Text(
+            text = "${filteredCities.size} şehir",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 20.dp, top = 8.dp)
         )
 
         if (filteredCities.isEmpty()) {
