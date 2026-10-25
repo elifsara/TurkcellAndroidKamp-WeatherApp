@@ -24,6 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.hava.ui.theme.HavaTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,14 +59,28 @@ fun CityScreen(modifier: Modifier = Modifier) {
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp)
         )
-        CityList(
-            cities = filteredCities,
-            selectedCityName = selectedCityName,
-            onCityClick = { city ->
-                selectedCityName = city.name
-                Log.d("HavaApp", "Tıklandı: ${city.name}")
+
+        if (filteredCities.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Şehir bulunamadı",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        )
+        } else {
+            CityList(
+                cities = filteredCities,
+                selectedCityName = selectedCityName,
+                onCityClick = { city ->
+                        selectedCityName = city.name
+                        Log.d("HavaApp", "Tıklandı: ${city.name}")
+                }
+            )
+        }
     }
 }
 
