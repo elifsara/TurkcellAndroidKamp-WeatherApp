@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
 fun CityScreen(modifier: Modifier = Modifier) {
     // Kutuya yazılan metin. Başta boş.
     var query by rememberSaveable { mutableStateOf("") }
+    var selectedCityName by rememberSaveable { mutableStateOf<String?>(null) }
     // Yazılan metni içeren şehilrler
     val filteredCities = cities.filter { it.name.contains(query, ignoreCase = true) }
     Column(modifier = modifier) {
@@ -55,7 +56,14 @@ fun CityScreen(modifier: Modifier = Modifier) {
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp)
         )
-        CityList(cities = filteredCities)
+        CityList(
+            cities = filteredCities,
+            selectedCityName = selectedCityName,
+            onCityClick = { city ->
+                selectedCityName = city.name
+                Log.d("HavaApp", "Tıklandı: ${city.name}")
+            }
+        )
     }
 }
 
@@ -63,6 +71,8 @@ fun CityScreen(modifier: Modifier = Modifier) {
 @Composable
 fun CityList(
     cities: List<City>,
+    selectedCityName: String?,
+    onCityClick: (City) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -73,7 +83,8 @@ fun CityList(
         items(cities) { city ->
             CityCard(
                 city = city,
-                onClick = { Log.d("HavaApp", "Tıklandı: ${city.name}") }
+                isSelected = city.name == selectedCityName,
+                onClick ={ onCityClick(city)}
             )
         }
     }

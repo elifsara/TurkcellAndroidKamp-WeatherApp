@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import com.example.hava.ui.theme.HavaTheme
 fun CityCard(
     city: City,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     Card(
@@ -29,7 +31,13 @@ fun CityCard(
         modifier = modifier
             .fillMaxWidth()
             .height(100.dp),     //Kartların boyutunun sabit kalması için
-        shape = RoundedCornerShape(24.dp)      //Yuvarlak köşeli
+        shape = RoundedCornerShape(24.dp),      //Yuvarlak köşeli
+        colors =
+        if (isSelected){
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Row(
             modifier = Modifier
@@ -60,11 +68,17 @@ fun CityCard(
         }
     }
 }
-
 @Preview(showBackground = true)
 @Composable
 fun CityCardPreview() {
     HavaTheme {
         CityCard(city = City("Ankara", 6))
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun CityCardSelectedPreview() {
+    HavaTheme {
+        CityCard(city = City("Ankara", 6), isSelected = true)
     }
 }
