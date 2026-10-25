@@ -1,7 +1,6 @@
 package com.example.hava
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
@@ -42,12 +41,9 @@ class DetailViewModel(
     var isFavorite by mutableStateOf(false)
         private set
 
-    // --- Yaşam döngüsü demosu için ---
-    val instanceNo = ++createdCount                  // bu kaçıncı DetailViewModel?
-    var requestCount by mutableIntStateOf(0)         // API'ye kaç kez gidildi?
-        private set
-    var counter by mutableIntStateOf(0)              // "+1" düğmesinin ViewModel'deki sayacı
-        private set
+    // Logcat'te yaşam döngüsünü izlemek için
+    private val instanceNo = ++createdCount          // bu kaçıncı DetailViewModel?
+    private var requestCount = 0                     // API'ye kaç kez gidildi?
 
     init {
         LifecycleLog.add("DetailViewModel #$instanceNo oluşturuldu")
@@ -78,10 +74,6 @@ class DetailViewModel(
                 DetailUiState.Error("Bir hata oluştu: ${e.message}")
             }
         }
-    }
-
-    fun increment() {
-        counter++
     }
 
     // Activity gerçekten bittiğinde (döndürmede DEĞİL) çağrılır

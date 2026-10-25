@@ -142,7 +142,7 @@ fun CityScreen(
                     val sections = if (viewModel.query.isBlank()) {
                         val favoriteIds = viewModel.favorites.map { it.id }.toSet()
                         listOf(
-                            CitySection("favoriler", "⭐ Favorilerim", viewModel.favorites),
+                            CitySection("favoriler", "❤️ Favorilerim", viewModel.favorites),
                             CitySection("populer", "Popüler şehirler", state.cities.filterNot { it.id in favoriteIds })
                         )
                     } else {
@@ -180,7 +180,7 @@ fun CityScreen(
     }
 }
 
-// Listede başlığıyla birlikte bir grup şehir (ör. "⭐ Favorilerim")
+// Listede başlığıyla birlikte bir grup şehir (ör. "❤️ Favorilerim")
 data class CitySection(
     val key: String,          // LazyColumn için değişmeyen kimlik
     val title: String,

@@ -3,9 +3,9 @@
 Turkcell Bilişim Kampı (Android) için geliştirilmiş, Jetpack Compose ile yazılmış bir hava durumu uygulaması.
 Şehir arayabilir, favorilerini kaydedebilir, bulunduğun yerin ve herhangi bir şehrin saatlik/günlük tahminini görebilirsin.
 
-| Ana ekran | Arama | Şehir detayı | Yaşam döngüsü demosu |
-|:-:|:-:|:-:|:-:|
-| <img src="docs/screenshots/main.png" width="200"> | <img src="docs/screenshots/search.png" width="200"> | <img src="docs/screenshots/detail.png" width="200"> | <img src="docs/screenshots/lifecycle.png" width="200"> |
+| Ana ekran | Arama | Şehir detayı |
+|:-:|:-:|:-:|
+| <img src="docs/screenshots/main.png" width="220"> | <img src="docs/screenshots/search.png" width="220"> | <img src="docs/screenshots/detail.png" width="220"> |
 
 ## Özellikler
 
@@ -48,18 +48,15 @@ flowchart LR
 - **Repository** verinin nereden geleceğine karar verir. ViewModel internetten mi veritabanından mı geldiğini bilmez.
   Bu sayede testlerde gerçek API ve veritabanı yerine sahte sınıflar verilebiliyor.
 
-## Yaşam döngüsü demosu
+## Yaşam döngüsü (Logcat)
 
-Detay ekranının en altındaki **🔬 Yaşam döngüsü demosu** kartı, Activity ile ViewModel'in farklı ömürlerini canlı gösterir:
+Activity ve ViewModel'lerin doğup ölmesi Logcat'e yazılır. Android Studio → **Logcat** → `tag:Yasam`:
 
-1. Bir şehre dokun → `DetailActivity #1` ve `DetailViewModel #1` oluşur, API'ye **1** istek gider.
-2. **+1**'e birkaç kez bas, sonra telefonu yan çevir.
-3. Activity numarası artar (eski Activity öldü, yenisi doğdu), ama **ViewModel numarası ve API isteği sayısı aynı kalır**.
-   `remember` ile tutulan sayaç 0'a döner, ViewModel'deki sayaç kaldığı yerden devam eder.
-4. Geri tuşuna basınca `onDestroy (kapandı)` ve `DetailViewModel silindi (onCleared)` görünür.
-   Detay açıkken arkadaki MainActivity ölmez, sadece `onStop` olur.
-
-Aynı olaylar Logcat'te `tag:Yasam` filtresiyle de görülebilir.
+1. Bir şehre dokun: `DetailActivity #1 onCreate`, `DetailViewModel #1 oluşturuldu`, `API isteği #1`.
+   Arkadaki MainActivity ölmez, sadece `onStop` olur.
+2. Telefonu yan çevir: `DetailActivity #1 onDestroy (döndürme)` → `DetailActivity #2 onCreate`.
+   **Yeni ViewModel oluşmaz ve API'ye tekrar istek gitmez**: ViewModel döndürmeden etkilenmez.
+3. Geri tuşu: `DetailViewModel #1 silindi (onCleared)` ve `DetailActivity #2 onDestroy (kapandı)`.
 
 ## Çalıştırma
 
@@ -78,13 +75,13 @@ Testleri çalıştırmak için:
 app/src/main/java/com/example/hava/
 ├── MainActivity.kt        Ana ekran: başlık, arama, konum kartı, favoriler, şehir listesi
 ├── DetailActivity.kt      Şehir detayı için ayrı Activity
-├── DetailScreen.kt        Detay ekranının arayüzü + yaşam döngüsü paneli
+├── DetailScreen.kt        Detay ekranının arayüzü
 ├── CityViewModel.kt       Ana ekranın durumu (arama, favoriler, konum, yenileme)
 ├── DetailViewModel.kt     Detay ekranının durumu
 ├── CityRepository.kt      API, veritabanı ve konumu tek yerden yöneten katman
 ├── CityApi.kt / WeatherApi.kt / ApiClient.kt   Retrofit
 ├── AppDatabase.kt / FavoriteDao.kt / FavoriteCity.kt   Room
 ├── LocationProvider.kt    Telefonun konumu → şehir
-├── LifecycleLog.kt        Activity/ViewModel olay günlüğü
+├── LifecycleLog.kt        Activity/ViewModel olaylarını Logcat'e yazar
 └── ...                    Kartlar, durum ekranları, tema, hava kodları
 ```

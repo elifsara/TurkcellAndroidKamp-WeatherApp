@@ -1,8 +1,6 @@
 package com.example.hava
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,18 +32,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -60,7 +48,6 @@ private val turkish = Locale.forLanguageTag("tr")
 
 @Composable
 fun DetailScreen(
-    activityNo: Int,
     onBack: () -> Unit,
     viewModel: DetailViewModel = viewModel()
 ) {
@@ -104,14 +91,6 @@ fun DetailScreen(
                     DetailsGrid(state.forecast)
                 }
             }
-
-            LifecyclePanel(
-                activityNo = activityNo,
-                viewModelNo = viewModel.instanceNo,
-                requestCount = viewModel.requestCount,
-                viewModelCounter = viewModel.counter,
-                onIncrement = { viewModel.increment() }
-            )
         }
     }
 }
@@ -388,110 +367,6 @@ private fun InfoTile(emoji: String, label: String, value: String, modifier: Modi
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-    }
-}
-
-// --- Yaşam döngüsü demosu ---
-// remember'daki sayaç Activity ile birlikte ölür (döndürünce 0'a döner),
-// ViewModel'deki sayaç ise döndürmeden etkilenmez.
-@Composable
-private fun LifecyclePanel(
-    activityNo: Int,
-    viewModelNo: Int,
-    requestCount: Int,
-    viewModelCounter: Int,
-    onIncrement: () -> Unit
-) {
-    var expanded by rememberSaveable { mutableStateOf(false) }   // döndürünce kapanmasın
-    var rememberCounter by remember { mutableIntStateOf(0) }      // döndürünce sıfırlanır!
-
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = !expanded }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "🔬  Yaşam döngüsü demosu",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = null
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            Column(
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Telefonu yan çevir: Activity ölüp yeniden doğar, ama ViewModel aynı kalır. " +
-                            "Bu yüzden ViewModel numarası ve API isteği sayısı değişmez.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatChip("Activity", "#$activityNo", Modifier.weight(1f))
-                    StatChip("ViewModel", "#$viewModelNo", Modifier.weight(1f))
-                    StatChip("API isteği", "$requestCount", Modifier.weight(1f))
-                }
-
-                Text(
-                    text = "Önce birkaç kez +1'e bas, sonra döndür:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    StatChip("remember", "$rememberCounter", Modifier.weight(1f))
-                    StatChip("ViewModel", "$viewModelCounter", Modifier.weight(1f))
-                    Button(onClick = {
-                        rememberCounter++
-                        onIncrement()
-                    }) {
-                        Text("+1")
-                    }
-                }
-
-                Text(
-                    text = "Son olaylar (en yeni üstte)",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Column {
-                    LifecycleLog.events.forEach { event ->
-                        Text(
-                            text = event,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatChip(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
-            .padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }
 

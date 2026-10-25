@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import com.example.hava.ui.theme.HavaTheme
 
 // Şehir detayı için AYRI bir Activity (Navigation yerine bilerek Activity kullandık:
-// iki Activity arasında geçerken yaşam döngüsünü Logcat'te ve ekranda görebilmek için)
+// iki Activity arasında geçerken yaşam döngüsünü Logcat'te "tag:Yasam" ile görebilmek için)
 class DetailActivity : ComponentActivity() {
 
     private var activityNo = 0    // bu kaçıncı DetailActivity nesnesi?
@@ -32,7 +32,6 @@ class DetailActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     DetailScreen(
-                        activityNo = activityNo,
                         onBack = { finish() }      // Activity'yi kapat → bir önceki ekrana dön
                     )
                 }
