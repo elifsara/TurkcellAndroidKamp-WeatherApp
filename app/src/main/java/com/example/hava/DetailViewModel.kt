@@ -38,6 +38,10 @@ class DetailViewModel(
     var uiState by mutableStateOf<DetailUiState>(DetailUiState.Loading)
         private set
 
+    // Bu şehir favorilerde mi? (veritabanından)
+    var isFavorite by mutableStateOf(false)
+        private set
+
     // --- Yaşam döngüsü demosu için ---
     val instanceNo = ++createdCount                  // bu kaçıncı DetailViewModel?
     var requestCount by mutableIntStateOf(0)         // API'ye kaç kez gidildi?
@@ -48,6 +52,15 @@ class DetailViewModel(
     init {
         LifecycleLog.add("DetailViewModel #$instanceNo oluşturuldu")
         load()
+        viewModelScope.launch {
+            repository.favorites.collect { list -> isFavorite = list.any { it.id == city.id } }
+        }
+    }
+
+    fun toggleFavorite() {
+        viewModelScope.launch {
+            if (isFavorite) repository.removeFavorite(city.id) else repository.addFavorite(city)
+        }
     }
 
     fun load() {

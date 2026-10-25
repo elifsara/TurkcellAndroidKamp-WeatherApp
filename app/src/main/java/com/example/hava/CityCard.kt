@@ -11,8 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +37,8 @@ fun CityCard(
     city: City,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
+    isFavorite: Boolean = false,
+    onFavoriteClick: (() -> Unit)? = null,   // null ise kalp simgesi gösterilmez
     onClick: () -> Unit = {}
 ) {
     Card(
@@ -48,7 +55,7 @@ fun CityCard(
                 .fillMaxSize()
                 // Havaya göre soldan sağa renk geçişi (WeatherCode.kt → weatherGradient)
                 .background(Brush.horizontalGradient(weatherGradient(city.weatherCode, city.isDay)))
-                .padding(horizontal = 20.dp),
+                .padding(start = 20.dp, end = if (onFavoriteClick != null) 8.dp else 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
@@ -87,6 +94,17 @@ fun CityCard(
                 fontWeight = FontWeight.Light,
                 color = Color.White
             )
+
+            // Kalp: favorilere ekle / çıkar
+            if (onFavoriteClick != null) {
+                IconButton(onClick = onFavoriteClick) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (isFavorite) "Favorilerden çıkar" else "Favorilere ekle",
+                        tint = Color.White
+                    )
+                }
+            }
         }
     }
 }
@@ -105,7 +123,7 @@ fun CityCardPreview() {
             temperature = 20.3,
             weatherCode = 0,
             isDay = true
-        ))
+        ), isFavorite = true, onFavoriteClick = {})
     }
 }
 

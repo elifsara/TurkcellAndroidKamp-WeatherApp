@@ -15,10 +15,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 
-class CityViewModel : ViewModel() {
-
-    // Şehirleri Repository'den alıyoruz (Ekran → ViewModel → Repository → API)
-    private val repository = CityRepository()
+// repository dışarıdan verilebiliyor → testlerde sahte (fake) bir Repository verebiliyoruz
+class CityViewModel(
+    private val repository: CityRepository = CityRepository()   // Ekran → ViewModel → Repository → API / veritabanı
+) : ViewModel() {
 
     // Arama kutusundaki metin. Boşken popüler şehirler gösterilir.
     var query by mutableStateOf("")
@@ -48,9 +48,18 @@ class CityViewModel : ViewModel() {
     var isRefreshing by mutableStateOf(false)
         private set
 
+    // Favori şehirler (veritabanından). Kalp simgesine basınca bu liste kendiliğinden güncellenir.
+    var favorites by mutableStateOf<List<City>>(emptyList())
+        private set
+
     init {
         LifecycleLog.add("CityViewModel oluşturuldu")
         search()   // ViewModel ilk oluşturulduğunda bir kere ara
+
+        // Veritabanını dinle: favori eklenince/silinince yeni liste buraya gelir
+        viewModelScope.launch {
+            repository.favorites.collect { favorites = it }
+        }
     }
 
     // Sadece MainActivity gerçekten kapanınca çağrılır (döndürmede çağrılmaz)
@@ -112,11 +121,19 @@ class CityViewModel : ViewModel() {
         }
     }
 
-    // Liste aşağı çekilince: ekrana gelmiş şehirlerin sıcaklıklarını yeniden iste
+    fun isFavorite(city: City): Boolean = favorites.any { it.id == city.id }
+
+    // Kalbe basınca: favoriyse sil, değilse ekle
+    fun toggleFavorite(city: City) {
+        viewModelScope.launch {
+            if (isFavorite(city)) repository.removeFavorite(city.id) else repository.addFavorite(city)
+        }
+    }
+
+    // Liste aşağı çekilince: listedeki, ekrana gelmiş şehirlerin sıcaklıklarını yeniden iste
     // ("--°" kalanlar dahil; eski sıcaklıklar yenisi gelene kadar görünmeye devam eder)
-    fun refresh() {
-        val cities = (uiState as? CityUiState.Success)?.cities.orEmpty()
-            .filter { it.id in shownCityIds }
+    fun refresh(listedCities: List<City>) {
+        val cities = listedCities.filter { it.id in shownCityIds }
         if (isRefreshing) return
 
         isRefreshing = true

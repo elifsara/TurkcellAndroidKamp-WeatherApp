@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -106,23 +107,31 @@ fun CityScreen(
                     message = state.message,
                     onRetry = { viewModel.search() }
                 )
-                is CityUiState.Success -> Column {
-                    Text(
-                        text = if (viewModel.query.isBlank()) "Popüler şehirler" else "${state.cities.size} şehir",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 20.dp, top = 16.dp)
-                    )
+                is CityUiState.Success -> {
+                    // Kutu boşsa: önce favoriler, sonra popüler şehirler. Aramada: sadece sonuçlar.
+                    val sections = if (viewModel.query.isBlank()) {
+                        val favoriteIds = viewModel.favorites.map { it.id }.toSet()
+                        listOf(
+                            CitySection("favoriler", "⭐ Favorilerim", viewModel.favorites),
+                            CitySection("populer", "Popüler şehirler", state.cities.filterNot { it.id in favoriteIds })
+                        )
+                    } else {
+                        listOf(CitySection("sonuclar", "${state.cities.size} şehir", state.cities))
+                    }.filter { it.cities.isNotEmpty() }   // boş bölümün başlığını gösterme
+
                     // Listeyi aşağı çekince sıcaklıkları yenile
                     PullToRefreshBox(
                         isRefreshing = viewModel.isRefreshing,
-                        onRefresh = { viewModel.refresh() },
+                        onRefresh = { viewModel.refresh(sections.flatMap { it.cities }) },
                         modifier = Modifier.fillMaxSize()
                     ) {
                         CityList(
-                            cities = state.cities.map { viewModel.withWeather(it) },   // yüklenen sıcaklıkları ekle
+                            sections = sections.map { section ->
+                                section.copy(cities = section.cities.map { viewModel.withWeather(it) })   // yüklenen sıcaklıkları ekle
+                            },
                             selectedCityId = viewModel.selectedCityId,
+                            isFavorite = { viewModel.isFavorite(it) },
+                            onFavoriteClick = { viewModel.toggleFavorite(it) },
                             onCityClick = {
                                 viewModel.onCityClick(it)
                                 context.startActivity(DetailActivity.newIntent(context, it))   // detay ekranını aç
@@ -136,32 +145,67 @@ fun CityScreen(
     }
 }
 
+// Listede başlığıyla birlikte bir grup şehir (ör. "⭐ Favorilerim")
+data class CitySection(
+    val key: String,          // LazyColumn için değişmeyen kimlik
+    val title: String,
+    val cities: List<City>
+)
+
 
 @Composable
 fun CityList(
-    cities: List<City>,
+    sections: List<CitySection>,
     selectedCityId: Long?,
+    isFavorite: (City) -> Boolean,
+    onFavoriteClick: (City) -> Unit,
     onCityClick: (City) -> Unit,
     onCityVisible: (City) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val listState = rememberLazyListState()
+
+    // Favori eklenip çıkarılınca en üste kaydır. Yoksa LazyColumn bulunduğu kartta kalır ve
+    // üste eklenen "Favorilerim" bölümü ekranın dışında kalır.
+    val favoriteCount = sections.find { it.key == "favoriler" }?.cities?.size ?: 0
+    LaunchedEffect(favoriteCount) {
+        listState.animateScrollToItem(0)
+    }
+
     LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(16.dp),
+        state = listState,
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(cities, key = { it.id }) { city ->   // key: hangi kartın hangi şehir olduğunu takip et
-            // LazyColumn bu kartı ancak ekrana gelirken çizer → o an sıcaklığını iste.
-            // Ekrana hiç gelmeyen kartların hava durumu hiç istenmez.
-            LaunchedEffect(city.id) {
-                onCityVisible(city)
+        sections.forEach { section ->
+            // Bölüm başlığı
+            item(key = section.key) {
+                Text(
+                    text = section.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .animateItem()
+                        .padding(start = 4.dp, top = 8.dp)
+                )
             }
-            CityCard(
-                city = city,
-                isSelected = city.id == selectedCityId,
-                onClick ={ onCityClick(city)},
-                modifier = Modifier.animateItem()     // liste değişince kartlar kayarak yer değiştirsin
-            )
+            items(section.cities, key = { it.id }) { city ->   // key: hangi kartın hangi şehir olduğunu takip et
+                // LazyColumn bu kartı ancak ekrana gelirken çizer → o an sıcaklığını iste.
+                // Ekrana hiç gelmeyen kartların hava durumu hiç istenmez.
+                LaunchedEffect(city.id) {
+                    onCityVisible(city)
+                }
+                CityCard(
+                    city = city,
+                    isSelected = city.id == selectedCityId,
+                    isFavorite = isFavorite(city),
+                    onFavoriteClick = { onFavoriteClick(city) },
+                    onClick = { onCityClick(city) },
+                    modifier = Modifier.animateItem()     // liste değişince kartlar kayarak yer değiştirsin
+                )
+            }
         }
     }
 }

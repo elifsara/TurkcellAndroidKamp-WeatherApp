@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -70,7 +73,13 @@ fun DetailScreen(
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
     ) {
-        DetailHeader(city = viewModel.city, forecast = forecast, onBack = onBack)
+        DetailHeader(
+            city = viewModel.city,
+            forecast = forecast,
+            isFavorite = viewModel.isFavorite,
+            onFavoriteClick = { viewModel.toggleFavorite() },
+            onBack = onBack
+        )
 
         Column(
             modifier = Modifier.padding(16.dp),
@@ -109,7 +118,13 @@ fun DetailScreen(
 
 // Üst kısım: havaya göre renkli arka plan, şehir adı ve büyük sıcaklık
 @Composable
-private fun DetailHeader(city: City, forecast: ForecastResponse?, onBack: () -> Unit) {
+private fun DetailHeader(
+    city: City,
+    forecast: ForecastResponse?,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
+    onBack: () -> Unit
+) {
     val current = forecast?.current
     val isDay = current?.let { it.isDay == 1 }
     val today = 1   // daily[0] = dün, daily[1] = bugün
@@ -126,6 +141,14 @@ private fun DetailHeader(city: City, forecast: ForecastResponse?, onBack: () -> 
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = Color.White)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = if (isFavorite) "Favorilerden çıkar" else "Favorilere ekle",
+                    tint = Color.White
+                )
             }
         }
         Text(
