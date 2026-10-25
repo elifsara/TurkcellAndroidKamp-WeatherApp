@@ -1,10 +1,12 @@
 package com.example.hava
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,21 +26,37 @@ fun CityCard(
 ) {
     Card(
         onClick=onClick,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .height(100.dp),     //Kartların boyutunun sabit kalması için
+        shape = RoundedCornerShape(24.dp)      //Yuvarlak köşeli
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
+            // Sol taraf: Şehir adı + Plaka
+            Column(modifier = Modifier.weight(1f)) {
+                // wight(1f) sağa kadar olan boş alanı kapla.
+                Text(
+                    text = city.name,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = "Plaka: ${city.plate.toString().padStart(2, '0')}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant   //Soluk renk
+                )
+            }
+            // Sağ taraf Sıcaklık (Yer tutucu-şimdilik)
             Text(
-                text = city.plate.toString().padStart(2, '0'),  // 6 -> "06"
-                style = MaterialTheme.typography.titleMedium
+                text = "--°",
+                style = MaterialTheme.typography.displaySmall
             )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = city.name,
-                style = MaterialTheme.typography.titleLarge
-            )
+
         }
     }
 }
